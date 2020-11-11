@@ -1,6 +1,8 @@
 import logging
 import os
+from datetime import datetime
 from io import BytesIO
+from urllib.parse import urlparse
 
 import requests
 import re
@@ -18,45 +20,31 @@ class ZyxelFirmwarePlugin(Plugin):
     name = 'ZyXEL Firmware Plugin'
 
     version = '[a-z0-9]+'
-    url_base = 'https://www.zyxel.ch'
-
-    @staticmethod
-    def _get_filename_from_cd(cd):
-        """
-        Get filename from content-disposition
-        """
-        if not cd:
-            return None
-        fname = re.findall('filename="(.+)"', cd)
-        if len(fname) == 0:
-            return None
-        return fname[0]
+    url_base = 'https://www.zyxel.com'
+    url_path = '/support/DownloadLandingSR.shtml?c=gb&l=en&md={}'
 
     def get_available_versions(self, product):
-        url = self.url_base + self.plugin_config['zyxel_page_path']
         zyxel_product_name = self.plugin_config['zyxel_product_name']
+        url = self.url_base + self.url_path.format(zyxel_product_name)
 
         req = requests.get(url)
         soup = BeautifulSoup(req.content, 'html.parser')
-        dl_links = soup.find_all('a', attrs={'data-type': 'Download firmware'})
+        dl_links = soup.find_all('a', attrs={'data-target': '#downloadModal', 'data-filelink': re.compile('.*')})
 
-        # pattern = ZyXEL GS1900-10HP, Firmware, Version 2.60(AAZI.2)C0
-        pattern = '^({}), Firmware, Version (.*)$'.format(zyxel_product_name)
         available_versions = []
         for link in dl_links:
-            LOGGER.debug(link.text)
-            match = re.search(pattern, link.text)
-            if match:
-                LOGGER.debug('found: ' + str(link))
-                fw_version = match.group(2)
-                available_versions.append(Version(version=fw_version, fw_link=self.url_base + '/' + link.get('href'), product=product))
+            LOGGER.debug(link)
+            fw_version = link.get('data-version')
+            # rd=Sep 29, 2020
+            fw_date_published = datetime.strptime(re.match('.*&rd=(.*)&.*', link.get('onclick')).group(1), '%b %d, %Y')
+            available_versions.append(Version(version=fw_version, fw_link=link.get('data-filelink'), date_published=fw_date_published, product=product))
 
         return available_versions
 
     def dl_fw(self, version):
         response = requests.get(version.fw_link, allow_redirects=True, stream=True)
         response.raise_for_status()
-        filename = ZyxelFirmwarePlugin._get_filename_from_cd(response.headers.get('content-disposition'))
+        filename = os.path.basename(urlparse(version.fw_link).path)
 
         fp = BytesIO()
         fp.write(response.content)
