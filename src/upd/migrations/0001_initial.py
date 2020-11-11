@@ -2,7 +2,7 @@
 
 from django.db import migrations, models
 import django.db.models.deletion
-import upd.models.models
+from upd.models.models import fw_upload_to
 
 
 class Migration(migrations.Migration):
@@ -67,7 +67,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('version', models.CharField(max_length=255)),
                 ('fw_link', models.TextField()),
-                ('fw', models.FileField(upload_to=upd.models.models.fw_upload_to)),
+                ('fw', models.FileField(upload_to=fw_upload_to)),
                 ('changelog', models.TextField(blank=True, null=True)),
                 ('date_published', models.DateField(blank=True, null=True)),
                 ('last_pulled', models.DateTimeField(blank=True, null=True)),

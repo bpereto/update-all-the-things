@@ -1,0 +1,15 @@
+db:
+  name: upd
+  user: upd
+
+image:
+  debug: true
+
+global:
+  storageClass: local-storage
+
+replication:
+  enabled: false
+
+#master:
+#  extraFlags: "--skip-grant-tables"

@@ -1,0 +1,219 @@
+#
+# APP
+#
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "upd.fullname" . }}-app
+  labels:
+    {{- include "upd.labels" . | nindent 4 }}
+spec:
+{{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+{{- end }}
+  selector:
+    matchLabels:
+      {{- include "upd.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+    {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      labels:
+        {{- include "upd.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "upd.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          #envFrom:
+          #  - configMapRef:
+          #    name: app-config
+          env:          
+            - name: "MYSQL_DATBASE"
+              value: "{{ .Values.app.db.name }}"
+            - name: "MYSQL_USER"
+              value: "{{ .Values.app.db.user }}"
+            - name: "MYSQL_HOST"
+              value: "{{ .Values.app.db.host }}"
+            - name: "MYSQL_PASSWORD"
+              valueFrom:
+                secretKeyRef:
+                  key: mariadb-password
+                  name: mariadb
+            - name: "DEBUG"
+              value: "{{ .Values.app.debug }}"
+            - name: "APP_LOG_LEVEL"
+              value: "{{ .Values.app.logLevel }}"
+            - name: "DJANGO_ALLOWED_HOSTS"
+              value: "{{ .Values.app.allowedHosts }}"
+            - name: "UPD_ADMIN_USER"
+              value: {{ .Values.app.admin_user| default "admin" | quote }}
+            - name: "UPD_ADMIN_PASSWORD"
+              valueFrom:
+                secretKeyRef:
+                  key: UPD_ADMIN_PASSWORD
+                  name: upd-app
+            - name: "SECRET_KEY"
+              valueFrom:
+                secretKeyRef:
+                  key: SECRET_KEY
+                  name: upd-app
+            - name: "CELERY_BROKER_URL"
+              value: "redis://redis-master:6379/0"
+            - name: "CELERY_RESULT_BACKEND"
+              value: "redis://redis-master:6379/0"
+            {{- if .Values.app.email.enabled }}
+            - name: "EMAIL_HOST"
+              value: "{{ .Values.app.email.host }}"
+            - name: "EMAIL_PORT"
+              value: "{{ .Values.app.email.port }}"
+            - name: "EMAIL_HOST_USER"
+              value: "{{ .Values.app.email.host_user }}"
+            - name: "EMAIL_HOST_PASSWORD"
+              value: "{{ .Values.app.email.host_password }}"
+            - name: "EMAIL_USE_SSL"
+              value: "{{ .Values.app.email.use_ssl }}"
+            - name: "EMAIL_FROM"
+              value: "{{ .Values.app.email.from }}"
+            {{- end }}
+          volumeMounts:
+            - mountPath: "/media"
+              name: {{ include "upd.fullname" . }}-media
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: {{ include "upd.fullname" . }}-media
+          persistentVolumeClaim:
+            claimName: {{ include "upd.fullname" . }}-media
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+#
+# Worker
+#
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "upd.fullname" . }}-worker
+  labels:
+    {{- include "upd.labels" . | nindent 4 }}
+spec:
+{{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+{{- end }}
+  selector:
+    matchLabels:
+      {{- include "upd.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+    {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      labels:
+        {{- include "upd.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "upd.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/bash", "-c"]
+          args: ["celery worker -A core -B --scheduler django_celery_beat.schedulers:DatabaseScheduler"]
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          env:          
+            - name: "MYSQL_DATBASE"
+              value: "{{ .Values.app.db.name }}"
+            - name: "MYSQL_USER"
+              value: "{{ .Values.app.db.user }}"
+            - name: "MYSQL_HOST"
+              value: "{{ .Values.app.db.host }}"
+            - name: "MYSQL_PASSWORD"
+              valueFrom:
+                secretKeyRef:
+                  key: mariadb-password
+                  name: mariadb
+            - name: "DEBUG"
+              value: "{{ .Values.app.debug }}"
+            - name: "APP_LOG_LEVEL"
+              value: "{{ .Values.app.logLevel }}"
+            - name: "CELERY_BROKER_URL"
+              value: "redis://redis-master:6379/0"
+            - name: "CELERY_RESULT_BACKEND"
+              value: "redis://redis-master:6379/0"
+            {{- if .Values.app.email.enabled }}
+            - name: "EMAIL_HOST"
+              value: "{{ .Values.app.email.host }}"
+            - name: "EMAIL_PORT"
+              value: "{{ .Values.app.email.port }}"
+            - name: "EMAIL_HOST_USER"
+              value: "{{ .Values.app.email.host_user }}"
+            - name: "EMAIL_HOST_PASSWORD"
+              value: "{{ .Values.app.email.host_password }}"
+            - name: "EMAIL_USE_SSL"
+              value: "{{ .Values.app.email.use_ssl }}"
+            - name: "EMAIL_FROM"
+              value: "{{ .Values.app.email.from }}"
+            {{- end }}
+          volumeMounts:
+            - mountPath: "/media"
+              name: {{ include "upd.fullname" . }}-media
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: {{ include "upd.fullname" . }}-media
+          persistentVolumeClaim:
+            claimName: {{ include "upd.fullname" . }}-media
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

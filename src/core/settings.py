@@ -193,7 +193,7 @@ MESSAGE_TAGS = {
 
 from appdirs import user_cache_dir
 MEDIA_URL = '/media/'
-MEDIA_ROOT = user_cache_dir('updall')
+MEDIA_ROOT = env('MEDIA_ROOT', user_cache_dir('updall'))
 
 #
 # NOTIFICATION SETTINGS
@@ -206,4 +206,3 @@ EMAIL_USE_SSL = True  # disallow unsecure communication!
 EMAIL_FROM = env('EMAIL_FROM', 'upd@{}'.format(socket.getfqdn()))
 if DEBUG:
     EMAIL_BACKEND = env('EMAIL_BACKEND', 'django.core.mail.backends.dummy.EmailBackend')
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
