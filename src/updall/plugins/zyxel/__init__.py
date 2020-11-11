@@ -1,1 +1,1 @@
-from .gs1900 import *
+from .base import *

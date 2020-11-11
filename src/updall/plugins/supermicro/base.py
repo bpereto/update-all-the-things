@@ -1,0 +1,89 @@
+import logging
+import os
+from io import BytesIO
+from urllib.parse import urlparse
+
+import requests
+import re
+from bs4 import BeautifulSoup
+from django.core import files
+
+from upd.models import Version
+from plugins.base import Plugin
+
+LOGGER = logging.getLogger(__name__)
+
+
+class SupermicroBasePlugin():
+
+    name = 'Supermicro Base Plugin'
+
+    url_base = 'https://www.supermicro.com'
+    fw_get_url = 'https://www.supermicro.com/support/resources/getfile.php?SoftwareItemID='
+
+    def get_request_data(self, *args):
+        pass
+
+    def get_available_versions(self, product):
+        url = self.url_base + self.url_path
+        product_name = self.plugin_config['supermicro_product_name']
+        product_id = self.plugin_config['supermicro_product_id']
+
+        data = self.get_request_data(**self.plugin_config)
+
+        req = requests.post(url, data)
+        soup = BeautifulSoup(req.content, 'html.parser')
+
+        # find bios fw product id
+        pattern = r'\/about\/policies\/disclaimer\.cfm\?SoftwareItemID\=(.*)'
+        href = re.compile(pattern)
+        fw_links = soup.find_all('a', href=href)
+        LOGGER.debug(fw_links)
+
+        available_versions = []
+
+        for link in fw_links:
+            match = re.search(pattern, link.get('href'))
+            fw_id = match.group(1)
+            fw_version = link.find_parent().find_next('td', text=re.compile('.*Revision:.*')).find_next('td').text
+            available_versions.append(Version(version=fw_version, fw_link=self.fw_get_url + fw_id, product=product))
+
+        return available_versions
+
+
+    def dl_fw(self, version):
+        response = requests.get(version.fw_link, allow_redirects=True, stream=True)
+        response.raise_for_status()
+
+        filename = os.path.basename(urlparse(response.url).path)
+        fp = BytesIO()
+        fp.write(response.content)
+        version.fw.save(filename, files.File(fp))
+        version.save()
+
+
+class SupermicroBIOSFirmwarePlugin(SupermicroBasePlugin, Plugin):
+
+    name = 'Supermicro BIOS Firmware Plugin'
+    url_path = '/support/resources/results.aspx'
+
+    def get_request_data(self, *args, **kwargs):
+        return {
+            'ProductName': kwargs['supermicro_product_name'],
+            'Category': 'MB',
+            'GetBIOS': 'Get+BIOS',
+            'ProductID': kwargs['supermicro_product_id']
+        }
+
+class SupermicroBMCFirmwarePlugin(SupermicroBasePlugin, Plugin):
+
+    name = 'Supermicro BMC Firmware Plugin'
+    url_path = '/support/bios/firmware.aspx'
+
+    def get_request_data(self, *args, **kwargs):
+        return {
+            'ProductName': kwargs['supermicro_product_name'],
+            'Resource': 'BIOS',
+            'GetBMC': 'Get+BMC+Firmware',
+            'ProductID': kwargs['supermicro_product_id']
+        }

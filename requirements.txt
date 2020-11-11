@@ -1,8 +1,7 @@
 beautifulsoup4
 requests
-sqlalchemy
 flask
-flask-migrate
-flask-sqlalchemy
 prettytable
-appdirs
+django-polymorphic
+django-extensions
+django-celery-beat

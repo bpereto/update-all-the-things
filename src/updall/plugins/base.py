@@ -1,7 +1,10 @@
 import inspect
+import json
 import os
 import pkgutil
+import logging
 
+LOGGER = logging.getLogger(__name__)
 
 class Plugin(object):
     """Base class that each plugin must inherit from. within this class
@@ -9,18 +12,25 @@ class Plugin(object):
     """
 
     name = 'UNKOWN'
+    plugin_config = {}
+
+    def __init__(self, plugin_config=None):
+        if plugin_config:
+            self.set_plugin_config(plugin_config)
+
+    def set_plugin_config(self, plugin_config):
+        self.plugin_config = json.loads(plugin_config)
 
     def get_cls_str(self):
         return '.'.join([self.__class__.__module__, self.__class__.__name__])
 
-    def get_available_versions(self):
+    def get_available_versions(self, product):
         """The method that we expect all plugins to implement. This is the
         method that our framework will call
         """
         raise NotImplementedError
 
-
-    def dl_fw(self, version, fw_dir):
+    def dl_fw(self, version):
         """The method that we expect all plugins to implement. This is the
         method that our framework will call
         """
@@ -45,8 +55,7 @@ class PluginCollection(object):
         """
         self.plugins = []
         self.seen_paths = []
-        print()
-        print(f'Looking for plugins under package {self.plugin_package}')
+        LOGGER.info(f'Looking for plugins under package {self.plugin_package}')
         self.walk_package(self.plugin_package)
 
     def walk_package(self, package):
@@ -61,7 +70,7 @@ class PluginCollection(object):
                 for (_, c) in clsmembers:
                     # Only add classes that are a sub class of Plugin, but NOT Plugin itself
                     if issubclass(c, Plugin) & (c is not Plugin):
-                        print(f'    Found plugin class: {c.__module__}.{c.__name__}')
+                        LOGGER.info(f'    Found plugin class: {c.__module__}.{c.__name__}')
                         self.plugins.append(c())
 
         # Now that we have looked at all the modules in the current package, start looking

@@ -8,7 +8,7 @@
 {% block 'content' %}
 <div class="row">
   <div class="col-sm-12 mb-3">
-    <h1>Latest Firmware</h1>
+    <h1>Latest Updates</h1>
   </div>
 </div>
 <div class="fade-in row">
@@ -51,13 +51,19 @@
                 <svg class="c-icon text-success">
                   <use xlink:href="/static/vendors/@coreui/icons/svg/free.svg#cil-check"></use>
                 </svg>
+              {% else %}
+                <svg class="c-icon">
+                  <use xlink:href="/static/vendors/@coreui/icons/svg/free.svg#cil-x-circle"></use>
+                </svg>
               {% endif %}
             </td>
               <td>
+                {% if object.pulled %}
                 <a href="{{ object.fw.url }}" download>{{object.get_fw_filename}}</a>
+                {% endif %}
               </td>
             <td class="text-right">
-              <a href="{% url 'fw-pull' object.id %}"><button class="btn btn-secondary btn-sm" data-toggle="tooltip" data-placement="top" data-original-title="Pull Firmware"><svg class="c-icon">
+              <a href="{% url 'fw-pull' object.id %}"><button class="btn btn-secondary btn-sm" data-toggle="tooltip" data-placement="top" data-original-title="Pull Firmware" {% if not object.pullable %}disabled{% endif %}><svg class="c-icon">
               <use xlink:href="/static/vendors/@coreui/icons/svg/free.svg#cil-cloud-download"></use>
               </svg></button></a>
           </td>
@@ -73,7 +79,7 @@
 
 <div class="row">
   <div class="col-sm-12 mb-3">
-    <h1>All Versions</h1>
+    <h1>All Updates</h1>
   </div>
 </div>
 <div class="fade-in row">
@@ -126,7 +132,7 @@
                 {% endif %}
               </td>
             <td class="text-right">
-              <a href="{% url 'fw-pull' object.id %}"><button class="btn btn-secondary btn-sm" data-toggle="tooltip" data-placement="top" data-original-title="Pull Firmware"><svg class="c-icon">
+              <a href="{% url 'fw-pull' object.id %}"><button class="btn btn-secondary btn-sm" data-toggle="tooltip" data-placement="top" data-original-title="Pull Firmware" {% if not object.pullable %}disabled{% endif %}><svg class="c-icon">
               <use xlink:href="/static/vendors/@coreui/icons/svg/free.svg#cil-cloud-download"></use>
               </svg></button></a>
           </td>

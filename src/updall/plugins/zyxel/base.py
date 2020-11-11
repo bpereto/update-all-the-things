@@ -13,19 +13,12 @@ from plugins.base import Plugin
 LOGGER = logging.getLogger(__name__)
 
 
-class ZyxelGS1900(Plugin):
+class ZyxelFirmwarePlugin(Plugin):
 
-    name = 'ZyXEL GS1900'
+    name = 'ZyXEL Firmware Plugin'
 
     version = '[a-z0-9]+'
-    fw_domain = 'https://www.zyxel.ch'
-    fw_index = f'{fw_domain}/de/business-products/switches/gs1900-series/downlods'
-    fw_found = False
-
-    def __init__(self, version='8', fw_index=None):
-        self.version = version
-        if fw_index:
-            self.fw_index = fw_index
+    url_base = 'https://www.zyxel.ch'
 
     @staticmethod
     def _get_filename_from_cd(cd):
@@ -39,13 +32,16 @@ class ZyxelGS1900(Plugin):
             return None
         return fname[0]
 
-    def get_available_versions(self):
-        req = requests.get(self.fw_index)
+    def get_available_versions(self, product):
+        url = self.url_base + self.plugin_config['zyxel_page_path']
+        zyxel_product_name = self.plugin_config['zyxel_product_name']
+
+        req = requests.get(url)
         soup = BeautifulSoup(req.content, 'html.parser')
         dl_links = soup.find_all('a', attrs={'data-type': 'Download firmware'})
 
         # pattern = ZyXEL GS1900-10HP, Firmware, Version 2.60(AAZI.2)C0
-        pattern = '^({}-{}), Firmware, Version (.*)$'.format(self.name, self.version)
+        pattern = '^({}), Firmware, Version (.*)$'.format(zyxel_product_name)
         available_versions = []
         for link in dl_links:
             LOGGER.debug(link.text)
@@ -53,15 +49,14 @@ class ZyxelGS1900(Plugin):
             if match:
                 LOGGER.debug('found: ' + str(link))
                 fw_version = match.group(2)
-                available_versions.append(Version(version=fw_version, fw_link=self.fw_domain + '/' + link.get('href')))
+                available_versions.append(Version(version=fw_version, fw_link=self.url_base + '/' + link.get('href'), product=product))
 
-        LOGGER.debug(available_versions)
         return available_versions
 
     def dl_fw(self, version):
         response = requests.get(version.fw_link, allow_redirects=True, stream=True)
         response.raise_for_status()
-        filename = ZyxelGS1900._get_filename_from_cd(response.headers.get('content-disposition'))
+        filename = ZyxelFirmwarePlugin._get_filename_from_cd(response.headers.get('content-disposition'))
 
         fp = BytesIO()
         fp.write(response.content)

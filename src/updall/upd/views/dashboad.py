@@ -29,7 +29,11 @@ class FWPullView(View):
     def get(self, request, pk=None, *args, **kwargs):
         version = Version.objects.get(id=pk)
         upd = UpdateAllTheThings()
-        fw_name = upd.download_fw_version(version)
+        try:
+            fw_name = upd.download_fw_version(version)
+        except Exception as exc:
+            LOGGER.exception(exc)
+            messages.add_message(request, messages.ERROR, f'Failed to pull {version}')
         messages.add_message(request, messages.INFO, f'Pulled {fw_name}')
         return redirect(reverse('dashboard'))
 
@@ -38,6 +42,10 @@ class RefreshMetadata(View):
 
     def get(self, request, *args, **kwargs):
         upd = UpdateAllTheThings()
-        upd.update_metadata()
+        try:
+            upd.update_metadata()
+        except Exception as exc:
+            LOGGER.exception(exc)
+            messages.add_message(request, messages.ERROR, f'Failed to update metadata: {exc}')
         messages.add_message(request, messages.INFO, 'Updated Metadata')
         return redirect(reverse('dashboard'))

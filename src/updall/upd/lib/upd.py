@@ -22,40 +22,40 @@ class UpdateAllTheThings:
         self.plugin_collection = PluginCollection('plugins')
 
     def update_metadata(self):
-        versions = Version.objects.all()
-        print(versions)
+        products = Product.objects.all()
 
         print('')
-        for plugin in self.plugin_collection.plugins:
-            print(f'Get latest Firmware Version of {plugin.name}:')
-            available_versions = plugin.get_available_versions()
+        print(self.plugin_collection.plugins)
 
-            try:
-                product = Product.objects.get(name=plugin.name)
-            except ObjectDoesNotExist:
-                product = Product.objects.create(name=plugin.name, plugin=plugin.get_cls_str())
+        for product in products:
+            LOGGER.info(f'Get latest Firmware Version of {product.name}:')
+            plugin = import_string(product.plugin)(product.plugin_config)
+
+            available_versions = plugin.get_available_versions(product)
+            LOGGER.debug(available_versions)
 
             for version in available_versions:
                 try:
-                    v = Version.objects.get(product=product, version=version.version)
+                    Version.objects.get(product=version.product, version=version.version)
                 except ObjectDoesNotExist:
-                    version.product = product
                     version.save()
 
     def get_latest(self, product_name):
         product = Product.objects.get(name=product_name)
         qs_versions = Version.objects.filter(product_id=product.id)
-        versions = list(qs_versions.values_list('version', flat=True))
-        LOGGER.debug(versions)
-        versions.sort(key=LooseVersion, reverse=True)
-        return Version.objects.get(product=product, version=versions[0])
+        if len(qs_versions) > 0:
+            versions = list(qs_versions.values_list('version', flat=True))
+            LOGGER.debug(versions)
+            versions.sort(key=LooseVersion, reverse=True)
+            return Version.objects.get(product=product, version=versions[0])
+        return None
 
     def get_all_latest(self):
         all_latest = []
         for product in Product.objects.all():
             latest = self.get_latest(product.name)
-            all_latest.append(latest)
-
+            if latest:
+                all_latest.append(latest)
         return all_latest
 
     def download_fw_version(self, version):

@@ -7,6 +7,7 @@ class UpdConfig(AppConfig):
     name = 'upd'
 
     def ready(self):
+        import upd.signals
         models = apps.get_models()
 
         for model in models:
