@@ -1,10 +1,13 @@
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from prettytable import PrettyTable
 
-from upd.models import Product
+# pylint: disable=import-outside-toplevel,R0801
 
 
 class Command(BaseCommand):
+    """
+    update fw metadata
+    """
     help = 'update fw metadata'
 
     def handle(self, *args, **options):

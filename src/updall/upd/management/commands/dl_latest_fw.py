@@ -1,9 +1,11 @@
-from django.core.management.base import BaseCommand, CommandError
-
+from django.core.management.base import BaseCommand
 from upd.lib import UpdateAllTheThings
 
 
 class Command(BaseCommand):
+    """
+    download latest fw
+    """
     help = 'download latest fw of all products'
 
     def handle(self, *args, **options):

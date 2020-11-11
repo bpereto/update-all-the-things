@@ -1,6 +1,7 @@
 from django.contrib import admin
+from upd.models import Product, Version
 
-from upd.models import Version, Product
+# pylint: disable=missing-class-docstring
 
 
 class VersionAdmin(admin.ModelAdmin):

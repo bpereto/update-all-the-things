@@ -1,33 +1,47 @@
 import logging
 import os
+import re
 from io import BytesIO
 from urllib.parse import urlparse
 
 import requests
-import re
 from bs4 import BeautifulSoup
 from django.core import files
-
-from upd.models import Version
 from plugins.base import Plugin
+from upd.models import Version
+
+# pylint: disable=import-outside-toplevel,duplicate-code
 
 LOGGER = logging.getLogger(__name__)
 
 
-class SupermicroBasePlugin():
+class SupermicroBasePlugin:
+    """
+    Supermicro Base Plugin
+    """
 
     name = 'Supermicro Base Plugin'
 
     url_base = 'https://www.supermicro.com'
+    url_path = None
     fw_get_url = 'https://www.supermicro.com/support/resources/getfile.php?SoftwareItemID='
+    plugin_config = {}
 
-    def get_request_data(self, *args):
-        pass
+    def get_request_data(self, *args, **kwargs):  # pylint: disable=unused-argument,no-self-use
+        """
+        get the parameters for request
+        :param args:
+        :return:
+        """
+        return {}
 
     def get_available_versions(self, product):
+        """
+        get available versions for product
+        :param product:
+        :return:
+        """
         url = self.url_base + self.url_path
-        product_name = self.plugin_config['supermicro_product_name']
-        product_id = self.plugin_config['supermicro_product_id']
 
         data = self.get_request_data(**self.plugin_config)
 
@@ -51,7 +65,12 @@ class SupermicroBasePlugin():
         return available_versions
 
 
-    def dl_fw(self, version):
+    def dl_fw(self, version):  # pylint: disable=no-self-use
+        """
+        download fw
+        :param version:
+        :return:
+        """
         response = requests.get(version.fw_link, allow_redirects=True, stream=True)
         response.raise_for_status()
 
@@ -63,6 +82,9 @@ class SupermicroBasePlugin():
 
 
 class SupermicroBIOSFirmwarePlugin(SupermicroBasePlugin, Plugin):
+    """
+    supermicro bios firmeware plugin
+    """
 
     name = 'Supermicro BIOS Firmware Plugin'
     url_path = '/support/resources/results.aspx'
@@ -76,6 +98,9 @@ class SupermicroBIOSFirmwarePlugin(SupermicroBasePlugin, Plugin):
         }
 
 class SupermicroBMCFirmwarePlugin(SupermicroBasePlugin, Plugin):
+    """
+    supermicro bmc firmware
+    """
 
     name = 'Supermicro BMC Firmware Plugin'
     url_path = '/support/bios/firmware.aspx'

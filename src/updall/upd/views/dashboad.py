@@ -1,13 +1,14 @@
 import logging
 
+from django.contrib import messages
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.views import View
 from django.views.generic.list import ListView
 from upd.lib import UpdateAllTheThings
 from upd.models import Version
-from django.contrib import messages
 
+# pylint: disable=broad-except
 LOGGER = logging.getLogger(__name__)
 
 
@@ -25,8 +26,12 @@ class DashboardView(ListView):
 
 
 class FWPullView(View):
+    """
+    view to pull fw
+    """
 
-    def get(self, request, pk=None, *args, **kwargs):
+    def get(self, request, *args,  pk=None, **kwargs):  # pylint: disable=unused-argument
+        """pull fw"""
         version = Version.objects.get(id=pk)
         upd = UpdateAllTheThings()
         try:
@@ -39,8 +44,13 @@ class FWPullView(View):
 
 
 class RefreshMetadata(View):
+    """
+    refresh metadata, fetch versions for products
+    """
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):  # pylint: disable=unused-argument
+        """fetch metadata"""
+
         upd = UpdateAllTheThings()
         try:
             upd.update_metadata()

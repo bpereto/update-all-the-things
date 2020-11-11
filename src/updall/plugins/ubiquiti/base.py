@@ -1,26 +1,34 @@
+import datetime
 import logging
 import os
 from io import BytesIO
+from urllib.parse import urlparse
 
 import requests
-import datetime
-from urllib.parse import urlparse
-from upd.models import Version
-
 from django.db.models.fields import files
-
 from plugins.base import Plugin
+from upd.models import Version
 
 LOGGER = logging.getLogger(__name__)
 
+# pylint: disable=import-outside-toplevel,R0801
+
 
 class UbiquitiFirmwarePlugin(Plugin):
+    """
+    Ubiquiti Firmware Plugin
+    """
 
     name = 'Ubiquiti Firmware Plugin'
     url_base = 'https://www.ui.com'
     url_pattern = '/download/?product={}'
 
     def get_available_versions(self, product):
+        """
+        get available versions for a product
+        :param product:
+        :return:
+        """
         url = self.url_base + self.url_pattern.format(self.plugin_config['ubiquiti_product_filter'])
         r = requests.get(url, headers={'content-type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'})
         LOGGER.debug(r.json()['downloads'][0])
@@ -36,7 +44,12 @@ class UbiquitiFirmwarePlugin(Plugin):
         LOGGER.debug(available_versions)
         return available_versions
 
-    def dl_fw(self, version):
+    def dl_fw(self, version):  # pylint: disable=no-self-use
+        """
+        download fw
+        :param version:
+        :return:
+        """
         filename = os.path.basename(urlparse(version.fw_link).path)
         response = requests.get(version.fw_link, allow_redirects=True, stream=True)
         response.raise_for_status()

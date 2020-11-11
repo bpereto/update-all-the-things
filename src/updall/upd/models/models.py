@@ -7,10 +7,17 @@ from plugins.base import PluginCollection
 
 
 def plugin_choices():
+    """
+    get available plugins
+    :return:
+    """
     return [(p.get_cls_str(), p.name,) for p in PluginCollection('plugins').plugins]
 
 
 class Product(models.Model):
+    """
+    represents a product to check on
+    """
 
     name = models.CharField(max_length=255)
     plugin = models.CharField(max_length=255, choices=lazy(plugin_choices, list)())
@@ -22,10 +29,19 @@ class Product(models.Model):
 
 
 def fw_upload_to(instance, filename):
+    """
+    get internal fw download string in update-all-the-things
+    :param instance:
+    :param filename:
+    :return:
+    """
     return os.path.join('fw', str(instance.id), filename)
 
 
 class Version(models.Model):
+    """
+    represents a firmware version linked to a product.
+    """
 
     version = models.CharField(max_length=255, null=False)
     fw_link = models.TextField()
@@ -42,10 +58,16 @@ class Version(models.Model):
         return f'Version: {self.version} of {self.product.name}'
 
     def get_fw_filename(self):
+        """
+        get the fw filename from model
+        :return:
+        """
         if self.fw:
             return os.path.basename(self.fw.name)
+        return None
 
     def pulled(self):
+        """check if fw is pulled"""
         if self.fw:
             return True
         return False

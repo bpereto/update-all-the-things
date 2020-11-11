@@ -6,7 +6,7 @@ import logging
 
 LOGGER = logging.getLogger(__name__)
 
-class Plugin(object):
+class Plugin:
     """Base class that each plugin must inherit from. within this class
     you must define the methods that all of your plugins must implement
     """
@@ -15,13 +15,26 @@ class Plugin(object):
     plugin_config = {}
 
     def __init__(self, plugin_config=None):
+        """
+        init plugin with plugin_config
+        :param plugin_config:
+        """
         if plugin_config:
             self.set_plugin_config(plugin_config)
 
     def set_plugin_config(self, plugin_config):
+        """
+        set plugin config for plugin
+        :param plugin_config:
+        :return:
+        """
         self.plugin_config = json.loads(plugin_config)
 
     def get_cls_str(self):
+        """
+        compile class string
+        :return:
+        """
         return '.'.join([self.__class__.__module__, self.__class__.__name__])
 
     def get_available_versions(self, product):
@@ -37,7 +50,7 @@ class Plugin(object):
         raise NotImplementedError
 
 
-class PluginCollection(object):
+class PluginCollection:
     """Upon creation, this class will read the plugins package for modules
     that contain a class definition that is inheriting from the Plugin class
     """
@@ -55,7 +68,7 @@ class PluginCollection(object):
         """
         self.plugins = []
         self.seen_paths = []
-        LOGGER.info(f'Looking for plugins under package {self.plugin_package}')
+        LOGGER.info('Looking for plugins under package %s', self.plugin_package)
         self.walk_package(self.plugin_package)
 
     def walk_package(self, package):
@@ -70,7 +83,7 @@ class PluginCollection(object):
                 for (_, c) in clsmembers:
                     # Only add classes that are a sub class of Plugin, but NOT Plugin itself
                     if issubclass(c, Plugin) & (c is not Plugin):
-                        LOGGER.info(f'    Found plugin class: {c.__module__}.{c.__name__}')
+                        LOGGER.info('    Found plugin class: %s.%s', c.__module__, c.__name__)
                         self.plugins.append(c())
 
         # Now that we have looked at all the modules in the current package, start looking
@@ -79,7 +92,7 @@ class PluginCollection(object):
         if isinstance(imported_package.__path__, str):
             all_current_paths.append(imported_package.__path__)
         else:
-            all_current_paths.extend([x for x in imported_package.__path__])
+            all_current_paths.extend([x for x in imported_package.__path__])  # pylint: disable=R1721
 
         for pkg_path in all_current_paths:
             if pkg_path not in self.seen_paths:

@@ -1,1 +1,1 @@
-from .upd import *
+from upd.lib.upd import *
