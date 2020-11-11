@@ -1,0 +1,110 @@
+version: '3'
+services:
+  db:
+    image: mariadb:10.5
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    environment:
+      - MYSQL_RANDOM_ROOT_PASSWORD=1
+    env_file:
+      - .env
+
+  app:
+    image: bpereto/borg-hive:0.1.2
+    env_file:
+      - .env
+    volumes:
+      - borg-config:/config
+      - borg-repos:/repos
+      - static:/staticfiles
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+  worker:
+    image: bpereto/borg-hive:0.1.2
+    entrypoint: celery worker -A core -l INFO -B --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    env_file:
+      - .env
+    volumes:
+      - borg-config:/config
+      - borg-repos:/repos:ro
+    depends_on:
+      - db
+
+  watcher:
+    image: bpereto/borg-hive:0.1.2
+    entrypoint: /bin/bash -c "/app/manage.py watch_repositories"
+    env_file:
+      - .env
+    volumes:
+      - borg-repos:/repos:ro
+    depends_on:
+      - db
+
+  borg:
+    image: bpereto/borg-hive:borg-0.1.2
+    depends_on:
+      - db
+    env_file:
+      - .env
+    volumes:
+      - borg-repos:/repos
+      - borg-config:/config
+    ports:
+      - "${BORG_SSH_PORT}:22"
+
+  # nginx:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.nginx
+  #   volumes:
+  #     - static:/staticfiles
+  #   ports:
+  #     - 80:80
+  #   depends_on:
+  #     - app
+
+  ldap:
+    # image: osixia/openldap:latest
+    image: osixia/openldap:1.4.0-amd64
+    env_file:
+      - .env
+    volumes:
+      - ldap-data:/var/lib/ldap
+      - ldap-config:/etc/ldap/slapd.d
+
+  redis:
+    # image: redis:latest
+    image: redis:6.0.7-buster
+
+volumes:
+  mariadb-data:
+  ldap-data:
+  ldap-config:
+  borg-config:
+  static:
+  borg-repos:
+
+#
+# EXAMPLES for other repository locations (borg-repos):
+#
+# BIND MOUNT on docker host:
+#
+#  volumes:
+#    borg-repos:
+#      driver_opts:
+#        type: none
+#        o: bind
+#        device: /opt/mydata/path
+#
+# NFS MOUNT:
+#
+#   volumes:
+#     example:
+#       driver_opts:
+#         type: "nfs"
+#         o: "nfsvers=4,addr=10.40.0.199,nolock,soft,rw"
+#         device: ":/docker/example"
+#

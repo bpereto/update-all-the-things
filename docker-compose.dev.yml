@@ -1,0 +1,63 @@
+version: '3'
+services:
+  db:
+    image: mariadb:10.5
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    environment:
+      - MYSQL_DATABASE=upd
+      - MYSQL_USER=upd
+      - MYSQL_PASSWORD=upd
+      - MYSQL_RANDOM_ROOT_PASSWORD=1
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python manage.py runserver 0.0.0.0:8000
+    environment:
+      - DEBUG=True
+      - MYSQL_HOST=db
+      - MYSQL_DATABASE=upd
+      - MYSQL_USER=upd
+      - MYSQL_PASSWORD=upd
+      - UPD_ADMIN_PASSWORD=login
+    env_file:
+      - .env
+      - .dev
+    volumes:
+      - ./src:/app
+      - upd-data:/media
+      - static:/staticfiles
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    entrypoint: celery worker -A core -l DEBUG -B --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    environment:
+      - DEBUG=True
+      - MYSQL_HOST=db
+      - MYSQL_DATABASE=upd
+      - MYSQL_USER=upd
+      - MYSQL_PASSWORD=upd
+    env_file:
+      - .env
+      - .dev
+    volumes:
+      - ./src:/app
+      - upd-data:/media
+    depends_on:
+      - db
+
+  redis:
+    image: redis:latest
+
+volumes:
+  mariadb-data:
+  upd-data:
+  static:

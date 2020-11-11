@@ -1,0 +1,53 @@
+- model: upd.product
+  pk: 1
+  fields:
+    name: Ubiquiti EdgeMax ERL-3 Lite
+    plugin: plugins.ubiquiti.base.UbiquitiFirmwarePlugin
+    plugin_config: '{"ubiquiti_product_filter":"erlite3"}'
+    notify: true
+- model: upd.product
+  pk: 2
+  fields:
+    name: Zyxel GS1900-8
+    plugin: plugins.zyxel.http.ZyxelFirmwareHTTPPlugin
+    plugin_config: '{"zyxel_product_name":"GS1900-8"}'
+    notify: true
+- model: upd.product
+  pk: 3
+  fields:
+    name: Grandstream HT801
+    plugin: plugins.grandstream.base.GrandstreamFirmwarePlugin
+    plugin_config: '{"grandstream_product_name": "HT801"}'
+    notify: true
+- model: upd.product
+  pk: 4
+  fields:
+    name: Supermicro BIOS H11SSL-NC
+    plugin: plugins.supermicro.base.SupermicroBIOSFirmwarePlugin
+    plugin_config: '{"supermicro_product_name": "H11SSL-NC+", "supermicro_product_id":
+      "86204"}'
+    notify: true
+- model: upd.product
+  pk: 5
+  fields:
+    name: Supermicro BMC H11SSL-NC
+    plugin: plugins.supermicro.base.SupermicroBMCFirmwarePlugin
+    plugin_config: '{"supermicro_product_name": "H11SSL-NC+", "supermicro_product_id":
+      "86204"}'
+    notify: true
+- model: upd.product
+  pk: 6
+  fields:
+    name: Supermicro BIOS A2SDi-8C
+    plugin: plugins.supermicro.base.SupermicroBIOSFirmwarePlugin
+    plugin_config: '{"supermicro_product_name": "A2SDi-8C+-HLN4F+", "supermicro_product_id":
+      "86099"}'
+    notify: true
+- model: upd.product
+  pk: 7
+  fields:
+    name: Supermicro BMC A2SDi-8C
+    plugin: plugins.supermicro.base.SupermicroBMCFirmwarePlugin
+    plugin_config: '{"supermicro_product_name": "A2SDi-8C+-HLN4F+", "supermicro_product_id":
+      "86099"}'
+    notify: true
