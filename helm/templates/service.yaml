@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "upd.fullname" . }}-app
+  name: upd-app
   labels:
     {{- include "upd.labels" . | nindent 4 }}
 spec:

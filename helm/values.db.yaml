@@ -1,6 +1,6 @@
-db:
-  name: upd
-  user: upd
+auth:
+  database: upd
+  username: upd
 
 image:
   debug: true
