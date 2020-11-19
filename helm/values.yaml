@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  repository: gitlab.app.local:5000/bpereto/update-all-the-things
+  repository: bpereto/update-all-the-things
   pullPolicy: Always
   tag: "latest"
 
