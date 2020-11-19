@@ -90,6 +90,6 @@ persistence:
     # existingClaim:
 
 redis:
-  enabled: true
+  enabled: false
   fullnameOverride: redis
   usePassword: false

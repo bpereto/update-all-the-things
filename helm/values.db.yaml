@@ -5,8 +5,8 @@ auth:
 image:
   debug: true
 
-global:
-  storageClass: local-storage
+#global:
+#  storageClass: local-storage
 
 replication:
   enabled: false
